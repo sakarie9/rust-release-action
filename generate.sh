@@ -2,7 +2,7 @@
 
 set -e
 
-# 使用方法说明
+# Usage instructions
 usage() {
   echo "Usage: $0 <project_name> <repo_owner> <repo_name> [--no-docker]"
   echo "  <project_name>: The name of the project (e.g., my-rust-app)"
@@ -12,13 +12,13 @@ usage() {
   exit 1
 }
 
-# 初始化变量
+# Initialize variables
 PROJECT_NAME=""
 REPO_OWNER=""
 REPO_NAME=""
 NO_DOCKER=false
 
-# 解析参数
+# Parse arguments
 while [[ "$#" -gt 0 ]]; do
     case $1 in
         --no-docker) NO_DOCKER=true; shift ;;
@@ -37,14 +37,14 @@ while [[ "$#" -gt 0 ]]; do
     esac
 done
 
-# 检查必需的参数
+# Check required arguments
 if [ -z "$PROJECT_NAME" ] || [ -z "$REPO_OWNER" ] || [ -z "$REPO_NAME" ]; then
   echo "Error: Missing required arguments."
   usage
 fi
 
-# 定义模板文件和输出文件路径
-# 假设此脚本在项目根目录运行，并且模板在 templates/ 目录下
+# Define template and output file paths
+# Assumes this script is run from the project root and templates are in templates/
 GORELEASER_TEMPLATE="templates/.goreleaser_template.yaml"
 DOCKERFILE_TEMPLATE="templates/Dockerfile_template"
 WORKFLOW_TEMPLATE="templates/release_template.yml"
@@ -54,7 +54,7 @@ OUTPUT_GORELEASER="${OUTPUT_DIR}/.goreleaser.yaml"
 OUTPUT_DOCKERFILE="${OUTPUT_DIR}/Dockerfile"
 OUTPUT_WORKFLOW="${OUTPUT_DIR}/.github/workflows/release.yml"
 
-# 检查模板文件是否存在
+# Check if template files exist
 if [ ! -f "$GORELEASER_TEMPLATE" ]; then
   echo "Error: GoReleaser template not found at $GORELEASER_TEMPLATE"
   exit 1
@@ -70,12 +70,12 @@ if [ ! -f "$WORKFLOW_TEMPLATE" ]; then
   exit 1
 fi
 
-# 创建输出目录（如果不存在）
+# Create output directory if it doesn't exist
 mkdir -p "$OUTPUT_DIR"
 
 echo "Generating files in $OUTPUT_DIR..."
 
-# 处理 .goreleaser.yaml
+# Process .goreleaser.yaml
 echo "Processing $GORELEASER_TEMPLATE -> $OUTPUT_GORELEASER"
 cp "$GORELEASER_TEMPLATE" "$OUTPUT_GORELEASER"
 sed -i "s/##PROJECT_NAME##/${PROJECT_NAME}/g" "$OUTPUT_GORELEASER"
@@ -84,7 +84,7 @@ sed -i "s/##REPO_NAME##/${REPO_NAME}/g" "$OUTPUT_GORELEASER"
 
 if [ "$NO_DOCKER" = true ]; then
   echo "Removing Docker configurations from $OUTPUT_GORELEASER..."
-  # 使用 awk 删除 ##DOCKER_START## 和 ##DOCKER_END## 之间的内容（包括标记本身）
+  # Use awk to delete content between ##DOCKER_START## and ##DOCKER_END## (inclusive)
   awk '
     /##DOCKER_START##/ { noprint=1 }
     !noprint { print }
@@ -94,7 +94,7 @@ if [ "$NO_DOCKER" = true ]; then
   # sed -i '/##DOCKER_START##/,/##DOCKER_END##/d' "$OUTPUT_GORELEASER"
 fi
 
-# 处理 Dockerfile
+# Process Dockerfile
 if [ "$NO_DOCKER" = false ]; then
   echo "Processing $DOCKERFILE_TEMPLATE -> $OUTPUT_DOCKERFILE"
   cp "$DOCKERFILE_TEMPLATE" "$OUTPUT_DOCKERFILE"
@@ -106,7 +106,7 @@ else
   fi
 fi
 
-# 处理 GitHub Actions 工作流
+# Process GitHub Actions workflow
 echo "Processing $WORKFLOW_TEMPLATE -> $OUTPUT_WORKFLOW"
 mkdir -p "$(dirname "$OUTPUT_WORKFLOW")"
 cp "$WORKFLOW_TEMPLATE" "$OUTPUT_WORKFLOW"
@@ -119,6 +119,6 @@ echo "  $OUTPUT_GORELEASER"
 if [ "$NO_DOCKER" = false ] && [ -f "$OUTPUT_DOCKERFILE" ]; then
   echo "  $OUTPUT_DOCKERFILE"
 fi
-echo "Please review these files and then copy them to your project's root directory and commit them."
+echo "Please review these files and then copy them to your project's root directory (and .github/workflows/ for the workflow) and commit them."
 
 exit 0
