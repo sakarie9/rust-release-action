@@ -65,6 +65,14 @@ jobs:
             cat Dockerfile
           fi
 
+      # Fake a commit to make GoReleaser not dirty
+      - name: Fake Commit
+        run: |
+          git config --local user.name "GitHub Actions"
+          git config --local user.email "actions@github.com"
+          git add --all
+          git commit -m "ci: fake commit" || echo "No changes to commit"
+
       # More assembly might be required: Docker logins, GPG, etc.
       # It all depends on your needs.
       - uses: mlugg/setup-zig@v2
