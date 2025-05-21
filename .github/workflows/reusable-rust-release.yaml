@@ -1,3 +1,9 @@
+# WARNING: NOT WORKING YET
+#
+# GoReleaser requires a clean git state to run. This means that if you have any uncommitted changes in your repository, GoReleaser will fail.
+# Unfortunately, the templates are dirty because of the generated files.
+# A fake commit is not working too. git tag was not made against commit error.
+
 name: Reusable Rust Release with GoReleaser
 
 on:

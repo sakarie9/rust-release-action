@@ -48,6 +48,7 @@ changelog:
       - "^ci:"
       - "^build:"
 
+##DOCKER_START##
 dockers:
   - image_templates:
       - "ghcr.io/##REPO_OWNER##/##REPO_NAME##:{{ .Tag }}-arm64"
@@ -86,3 +87,4 @@ docker_manifests:
     image_templates:
       - "ghcr.io/##REPO_OWNER##/##REPO_NAME##:{{ .Tag }}-arm64"
       - "ghcr.io/##REPO_OWNER##/##REPO_NAME##:{{ .Tag }}-amd64"
+##DOCKER_END##
