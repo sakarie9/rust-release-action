@@ -16,10 +16,10 @@ on:
         required: true
         type: string
       # Add other inputs if needed, e.g., runner type
-    # secrets:
-    #   GH_TOKEN_FOR_RELEASE:
-    #     description: 'GitHub token for creating releases and pushing to GHCR'
-    #     required: true
+    secrets:
+      TOKEN:
+        description: 'GitHub token for creating releases and pushing to GHCR'
+        required: true
 
 jobs:
   goreleaser-release:
