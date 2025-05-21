@@ -76,3 +76,8 @@ To generate files without Docker support:
 This will create the necessary configuration files in the `dist/` directory.
 
 Copy them to your rust project folder to use.
+
+## Projects using this
+
+- [sakarie9/pfs_rs](https://github.com/sakarie9/pfs_rs)
+- [sakarie9/tg-stickerize](https://github.com/sakarie9/tg-stickerize)
