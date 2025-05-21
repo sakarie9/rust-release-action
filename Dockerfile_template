@@ -1,0 +1,3 @@
+FROM debian:stable-slim
+COPY ##PROJECT_NAME## /usr/bin/##PROJECT_NAME##
+ENTRYPOINT [ "/usr/bin/##PROJECT_NAME##" ]

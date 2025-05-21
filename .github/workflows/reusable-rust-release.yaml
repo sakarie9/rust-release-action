@@ -1,0 +1,89 @@
+name: Reusable Rust Release with GoReleaser
+
+on:
+  workflow_call:
+    inputs:
+      project_name:
+        description: "The name of the project. This should match the project name in your Cargo.toml."
+        required: true
+        type: string
+      repo_owner:
+        description: "The owner/organization for the Docker image on GHCR (e.g., your GitHub username or org name)"
+        required: true
+        type: string
+      repo_name:
+        description: "The name of the repository for the Docker image on GHCR"
+        required: true
+        type: string
+      # Add other inputs if needed, e.g., runner type
+    # secrets:
+    #   GH_TOKEN_FOR_RELEASE:
+    #     description: 'GitHub token for creating releases and pushing to GHCR'
+    #     required: true
+
+jobs:
+  goreleaser-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout project code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # GoReleaser needs full history for changelogs
+
+      - name: Checkout CI templates
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.workflow_repository || github.repository }} # Use the repo where this workflow resides
+          ref: ${{ github.workflow_sha || github.ref }} # Use the commit SHA or ref of this workflow
+          path: .ci-templates
+
+      - name: Prepare .goreleaser.yaml from template
+        run: |
+          if [ -f ".goreleaser.yaml" ]; then
+            echo "File .goreleaser.yaml exists in project. Skipping template generation."
+          else
+            cp .ci-templates/goreleaser_template.yaml .goreleaser.yaml
+
+            sed -i "s/##PROJECT_NAME##/${{ inputs.project_name }}/g" .goreleaser.yaml
+            sed -i "s/##REPO_OWNER##/${{ inputs.repo_owner }}/g" .goreleaser.yaml
+            sed -i "s/##REPO_NAME##/${{ inputs.repo_name }}/g" .goreleaser.yaml
+
+            echo "Generated .goreleaser.yaml:"
+            cat .goreleaser.yaml
+          fi
+
+      - name: Prepare Dockerfile from template
+        run: |
+          if [ -f "Dockerfile" ]; then
+            echo "File Dockerfile exists in project. Skipping template generation."
+          else
+            cp .ci-templates/Dockerfile_template Dockerfile
+
+            sed -i "s/##PROJECT_NAME##/${{ inputs.project_name }}/g" Dockerfile
+
+            echo "Using Dockerfile:"
+            cat Dockerfile
+          fi
+
+      # More assembly might be required: Docker logins, GPG, etc.
+      # It all depends on your needs.
+      - uses: mlugg/setup-zig@v2
+      # - uses: sigstore/cosign-installer@v3.8.2
+      # - uses: anchore/sbom-action/download-syft@v0.20.0
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ inputs.repo_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          distribution: goreleaser
+          version: "~> v2"
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN_FOR_RELEASE }}
+          GH_PAT: ${{ secrets.GH_PAT }}
