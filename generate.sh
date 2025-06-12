@@ -47,14 +47,18 @@ fi
 # Assumes this script is run from the project root and templates are in templates/
 GORELEASER_TEMPLATE="templates/.goreleaser_template.yaml"
 DOCKERFILE_TEMPLATE="templates/Dockerfile_template"
-WORKFLOW_TEMPLATE="templates/release_template.yml"
-CI_TEMPLATE="templates/ci_template.yml"
+
+# Define workflow configurations: "template_path:output_path_suffix"
+WORKFLOW_CONFIGS=(
+  "templates/release_template.yml:.github/workflows/release.yml"
+  "templates/ci_template.yml:.github/workflows/ci.yml"
+  "templates/ci-goreleaser_template.yml:.github/workflows/ci-goreleaser.yml"
+)
 
 OUTPUT_DIR="dist"
 OUTPUT_GORELEASER="${OUTPUT_DIR}/.goreleaser.yaml"
 OUTPUT_DOCKERFILE="${OUTPUT_DIR}/Dockerfile"
-OUTPUT_WORKFLOW="${OUTPUT_DIR}/.github/workflows/release.yml"
-OUTPUT_CI="${OUTPUT_DIR}/.github/workflows/ci.yml"
+# OUTPUT_WORKFLOW and OUTPUT_CI will be derived in the loop
 
 # Check if template files exist
 if [ ! -f "$GORELEASER_TEMPLATE" ]; then
@@ -67,15 +71,13 @@ if [ ! -f "$DOCKERFILE_TEMPLATE" ]; then
   exit 1
 fi
 
-if [ ! -f "$WORKFLOW_TEMPLATE" ]; then
-  echo "Error: Workflow template not found at $WORKFLOW_TEMPLATE"
-  exit 1
-fi
-
-if [ ! -f "$CI_TEMPLATE" ]; then
-  echo "Error: CI template not found at $CI_TEMPLATE"
-  exit 1
-fi
+for config in "${WORKFLOW_CONFIGS[@]}"; do
+  IFS=':' read -r template_path _ <<< "$config"
+  if [ ! -f "$template_path" ]; then
+    echo "Error: Workflow template not found at $template_path"
+    exit 1
+  fi
+done
 
 # Create output directory if it doesn't exist
 mkdir -p "$OUTPUT_DIR"
@@ -113,17 +115,26 @@ else
   fi
 fi
 
-# Process GitHub Actions workflow
-echo "Processing $WORKFLOW_TEMPLATE -> $OUTPUT_WORKFLOW"
-mkdir -p "$(dirname "$OUTPUT_WORKFLOW")"
-cp "$WORKFLOW_TEMPLATE" "$OUTPUT_WORKFLOW"
-cp "$CI_TEMPLATE" "${OUTPUT_CI}"
+# Process GitHub Actions workflows
+echo "Processing GitHub Actions workflows..."
+for config in "${WORKFLOW_CONFIGS[@]}"; do
+  IFS=':' read -r template_path output_suffix <<< "$config"
+  output_file="${OUTPUT_DIR}/${output_suffix}"
+  echo "Processing $template_path -> $output_file"
+  mkdir -p "$(dirname "$output_file")"
+  cp "$template_path" "$output_file"
+  # If workflows need variable substitution in the future, add sed commands here
+  # For example:
+  # sed -i "s/##PROJECT_NAME##/${PROJECT_NAME}/g" "$output_file"
+done
 
 
 echo "Generation complete."
 echo "Generated files:"
-echo "  $OUTPUT_WORKFLOW"
-echo "  $OUTPUT_CI"
+for config in "${WORKFLOW_CONFIGS[@]}"; do
+  IFS=':' read -r _ output_suffix <<< "$config"
+  echo "  ${OUTPUT_DIR}/${output_suffix}"
+done
 echo "  $OUTPUT_GORELEASER"
 if [ "$NO_DOCKER" = false ] && [ -f "$OUTPUT_DOCKERFILE" ]; then
   echo "  $OUTPUT_DOCKERFILE"
