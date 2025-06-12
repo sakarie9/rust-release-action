@@ -48,11 +48,13 @@ fi
 GORELEASER_TEMPLATE="templates/.goreleaser_template.yaml"
 DOCKERFILE_TEMPLATE="templates/Dockerfile_template"
 WORKFLOW_TEMPLATE="templates/release_template.yml"
+CI_TEMPLATE="templates/ci_template.yml"
 
 OUTPUT_DIR="dist"
 OUTPUT_GORELEASER="${OUTPUT_DIR}/.goreleaser.yaml"
 OUTPUT_DOCKERFILE="${OUTPUT_DIR}/Dockerfile"
 OUTPUT_WORKFLOW="${OUTPUT_DIR}/.github/workflows/release.yml"
+OUTPUT_CI="${OUTPUT_DIR}/.github/workflows/ci.yml"
 
 # Check if template files exist
 if [ ! -f "$GORELEASER_TEMPLATE" ]; then
@@ -67,6 +69,11 @@ fi
 
 if [ ! -f "$WORKFLOW_TEMPLATE" ]; then
   echo "Error: Workflow template not found at $WORKFLOW_TEMPLATE"
+  exit 1
+fi
+
+if [ ! -f "$CI_TEMPLATE" ]; then
+  echo "Error: CI template not found at $CI_TEMPLATE"
   exit 1
 fi
 
@@ -110,11 +117,13 @@ fi
 echo "Processing $WORKFLOW_TEMPLATE -> $OUTPUT_WORKFLOW"
 mkdir -p "$(dirname "$OUTPUT_WORKFLOW")"
 cp "$WORKFLOW_TEMPLATE" "$OUTPUT_WORKFLOW"
+cp "$CI_TEMPLATE" "${OUTPUT_CI}"
 
 
 echo "Generation complete."
 echo "Generated files:"
 echo "  $OUTPUT_WORKFLOW"
+echo "  $OUTPUT_CI"
 echo "  $OUTPUT_GORELEASER"
 if [ "$NO_DOCKER" = false ] && [ -f "$OUTPUT_DOCKERFILE" ]; then
   echo "  $OUTPUT_DOCKERFILE"
